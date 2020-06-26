@@ -1,7 +1,9 @@
 package com.example.wechatwork.controller;
 
+import com.example.wechatwork.MemoryStorage;
 import com.example.wechatwork.config.WechatWorkConfig;
 import com.example.wechatwork.gateway.WechatWorkGateway;
+import com.example.wechatwork.model.AttestUserInfo;
 import com.example.wechatwork.model.GetTokenResponse;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -16,6 +18,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
 @Controller
@@ -26,6 +32,9 @@ public class CorporateCustomerEventController {
     private WechatWorkConfig wechatWorkConfig;
     @Autowired
     private WechatWorkGateway gw;
+
+    @Autowired
+    private MemoryStorage store;
 
     @GetMapping("/ping")
     public ResponseEntity<?> ping() {
@@ -45,6 +54,7 @@ public class CorporateCustomerEventController {
 
         return new ResponseEntity<>(decrypt, HttpStatus.OK);
     }
+
 
     @PostMapping(path = "/corporate-customer-event")
     public ResponseEntity<?> callback(@RequestParam("msg_signature") String message,
@@ -100,6 +110,19 @@ public class CorporateCustomerEventController {
                 String response = gw.sendAppMessage(appToken.getAccess_token(), userMsg, userId);
 
                 log.info("Delete client callback response, {}", response);
+            }
+        } else if ("taskcard_click".equals(msgContent.get("Event"))) {
+            String taskId = (String) msgContent.get("TaskId");
+            String eventKey = (String) msgContent.get("EventKey");
+
+            if ("affirm".equalsIgnoreCase(eventKey)) {
+//                store.removeTaskId(taskId);
+                LOGGER.info("Log affirmed for {}", taskId);
+                AttestUserInfo info = store.getInfoByTaskId(taskId);
+                if (info != null) {
+                    info.setAttestEndDatetime(LocalDateTime.now());
+                    info.setAttested(true);
+                }
             }
         }
 
