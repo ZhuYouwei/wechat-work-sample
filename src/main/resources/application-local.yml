@@ -1,0 +1,10 @@
+spring:
+  profiles: local
+
+wechatwork:
+  corpid: ww4816b0ccb0d935f1
+  corpsecret: pfK-L8Mgltovqz1q-wHXbeN7QYh4qmbLHupB99id5Os
+  appsecret: Sba4UtdPh0wLq8zXd5UE4JGPchQTl2x_sbcxASk3BmM
+  externalcontact:
+    token: JMN9M9N
+    aesKey: LsQmBCPwvVaSA9c6fmLCzdzVCnYhzS5p9rSbsTekoz4

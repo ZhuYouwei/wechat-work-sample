@@ -10,6 +10,9 @@ import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import com.example.wechatwork.AppState;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -30,6 +33,9 @@ public class ScheduledDisclaimerBroadcastJob {
     @Autowired
     private MemoryStorage store;
 
+    @Autowired
+    private AppState appState;
+
     String DISCLAIMER_MSG = "J.P. Morgan Funds believes an informed advisor community means a better off investment community.\n" +
             "\n" +
             "As such, “let’s make every investor better off” and the communications associated with this marketing line are meant to showcase that J.P. Morgan Funds would like to partner with Financial Advisors to help them help their clients.\n" +
@@ -46,7 +52,9 @@ public class ScheduledDisclaimerBroadcastJob {
 
     @Scheduled(cron = "10 * * * * *")
     public void broadcastDisclaimer() {
+        if (!appState.getSchedulerToggle()) return;
         sendAttestations();
+        appState.setLastSchedulerRunTime(LocalDateTime.now());
     }
 
     public void sendAttestations() {
