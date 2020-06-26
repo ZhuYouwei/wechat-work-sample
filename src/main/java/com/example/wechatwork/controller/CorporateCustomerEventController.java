@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.math.BigDecimal;
+
 @Controller
 @Slf4j
 public class CorporateCustomerEventController {
@@ -65,24 +67,40 @@ public class CorporateCustomerEventController {
 
         if ("change_external_contact".equals(msgContent.get("Event"))) {
             if ("add_external_contact".equals(msgContent.get("ChangeType"))) {
-                //TODO fetch external user name and send customized welcome message
-
-
+                val externalUserID = (String) msgContent.get("ExternalUserID");
                 GetTokenResponse res = gw.getAccessToken();
+
+                String contactName = gw.fetchExternalUserDetail(res.getAccess_token(), externalUserID);
+
+                log.info("external user contact name {}", contactName);
+
                 // Welcome message
-                String r1 = gw.sendWelcome(res.getAccess_token(), (String) msgContent.get("WelcomeCode"), "Welcome to JPMorgan!");
+                String r1 = gw.sendWelcome(res.getAccess_token(), (String) msgContent.get("WelcomeCode"), "Welcome to JPMorgan! " + contactName);
 
-                log.info("Welcome message call back response {}",r1);
-
-                String externalUserId = (String) msgContent.get("ExternalUserID");
+                log.info("Welcome message call back response {}", r1);
 
                 // Disclaimer message
-                String r2 = gw.sendMessageTask(res.getAccess_token(), externalUserId, "Some disclaimer text.");
+                String r2 = gw.sendMessageTask(res.getAccess_token(), externalUserID, "Some disclaimer text.");
 
                 log.info("Disclaimer message call back response {}", r2);
             }
 
-            //TODO event when do contact deletion, any trigger?
+            if ("del_external_contact".equalsIgnoreCase((String) msgContent.get("ChangeType"))) {
+                String userId = (String) msgContent.get("UserID");
+                GetTokenResponse res = gw.getAccessToken();
+
+                BigDecimal externalClientCount = this.gw.fetchExternalContactCount(res.getAccess_token(), userId);
+
+                GetTokenResponse appToken = gw.getAccessTokenForUserApp();
+
+
+                String userMsg = "You have been deleted by an external user, current external user count: " + externalClientCount.toString();
+
+
+                String response = gw.sendAppMessage(appToken.getAccess_token(), userMsg, userId);
+
+                log.info("Delete client callback response, {}", response);
+            }
         }
 
         return new ResponseEntity<>("reply", HttpStatus.OK);

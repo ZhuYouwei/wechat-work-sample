@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties
 @ConfigurationProperties
+@lombok.Value
 public class WechatWorkConfig {
     @Value( "${wechatwork.corpid}" )
     private String corpid;
@@ -15,25 +16,13 @@ public class WechatWorkConfig {
     @Value( "${wechatwork.corpsecret}" )
     private String corpsecret;
 
+    @Value( "${wechatwork.appsercret}" )
+    private String appsecret;
+
     @Value( "${wechatwork.externalcontact.token}" )
     private String externalContactToken;
 
     @Value( "${wechatwork.externalcontact.aesKey}" )
     private String externalContactAesKey;
 
-    public String getCorpid() {
-        return corpid;
-    }
-
-    public String getCorpsecret() {
-        return corpsecret;
-    }
-
-    public String getExternalContactToken() {
-        return externalContactToken;
-    }
-
-    public String getExternalContactAesKey() {
-        return externalContactAesKey;
-    }
 }
