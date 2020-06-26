@@ -48,7 +48,7 @@ public class ScheduledDisclaimerBroadcastJob {
             "\n" +
             "Comments and opinions posted by users are the responsibility of the person who posted them. Any Twitter mentions and followers do not constitute endorsements of any kind. Due to privacy and security policies, we cannot use Twitter to communicate directly with users. Therefore, please do not use Twitter and direct messaging to submit questions or request transactions. If you have questions, please call J.P. Morgan Funds at 1-800-480-4111.";
 
-    @Scheduled(cron = "10 * * * * *")
+    @Scheduled(cron = "1 * * * * *")
     public void broadcastDisclaimer() {
         if (!appState.getSchedulerToggle()) return;
         sendAttestations();

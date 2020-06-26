@@ -54,7 +54,7 @@ export default {
         var att = []
         var res = await axios.get("/attestation/current")
         for (var x of Object.values(res.data)){
-            x.rowClass = x.attested? "": "bg-danger"
+            x.rowClass = x.attested? "": "table-danger"
             att.push(x)
         }
 
