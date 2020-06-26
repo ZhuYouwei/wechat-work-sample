@@ -15,6 +15,9 @@ public class WechatWorkConfig {
     @Value( "${wechatwork.corpsecret}" )
     private String corpsecret;
 
+    @Value( "${wechatwork.appsecret}" )
+    private String appsecret;
+
     @Value( "${wechatwork.externalcontact.token}" )
     private String externalContactToken;
 
@@ -27,6 +30,10 @@ public class WechatWorkConfig {
 
     public String getCorpsecret() {
         return corpsecret;
+    }
+
+    public String getAppsecret() {
+        return appsecret;
     }
 
     public String getExternalContactToken() {

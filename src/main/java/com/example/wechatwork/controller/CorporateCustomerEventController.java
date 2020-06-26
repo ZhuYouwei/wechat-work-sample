@@ -1,7 +1,9 @@
 package com.example.wechatwork.controller;
 
+import com.example.wechatwork.MemoryStorage;
 import com.example.wechatwork.config.WechatWorkConfig;
 import com.example.wechatwork.gateway.WechatWorkGateway;
+import com.example.wechatwork.model.AttestUserInfo;
 import com.example.wechatwork.model.GetTokenResponse;
 import lombok.val;
 import me.chanjar.weixin.common.util.XmlUtils;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 
 @Controller
 public class CorporateCustomerEventController {
@@ -27,6 +30,9 @@ public class CorporateCustomerEventController {
     @Autowired
     private WechatWorkGateway gw;
 
+    @Autowired
+    private MemoryStorage store;
+
     @GetMapping("/ping")
     public ResponseEntity<?> ping() {
         return new ResponseEntity<>("pong", HttpStatus.OK);
@@ -34,9 +40,9 @@ public class CorporateCustomerEventController {
 
     @GetMapping("/corporate-customer-event")
     public ResponseEntity<?> echo(@RequestParam("msg_signature") String msg_signature,
-                       @RequestParam("timestamp") String timestamp,
-                       @RequestParam("nonce") String nonce,
-                       @RequestParam("echostr") String echostr) {
+                                  @RequestParam("timestamp") String timestamp,
+                                  @RequestParam("nonce") String nonce,
+                                  @RequestParam("echostr") String echostr) {
         WxCryptUtil wxCryptUtil = new WxCryptUtil(wechatWorkConfig.getExternalContactToken(),
                 wechatWorkConfig.getExternalContactAesKey(),
                 wechatWorkConfig.getCorpid());
@@ -45,6 +51,7 @@ public class CorporateCustomerEventController {
 
         return new ResponseEntity<>(decrypt, HttpStatus.OK);
     }
+
 
     @PostMapping(path = "/corporate-customer-event")
     public ResponseEntity<?> callback(@RequestParam("msg_signature") String message,
@@ -74,6 +81,19 @@ public class CorporateCustomerEventController {
 
                 // Disclaimer message
                 String r2 = gw.sendMessageTask(res.getAccess_token(), externalUserId, "Some disclaimer text.");
+            }
+        } else if ("taskcard_click".equals(msgContent.get("Event"))) {
+            String taskId = (String) msgContent.get("TaskId");
+            String eventKey = (String) msgContent.get("EventKey");
+
+            if ("affirm".equalsIgnoreCase(eventKey)) {
+//                store.removeTaskId(taskId);
+                LOGGER.info("Log affirmed for {}", taskId);
+                AttestUserInfo info = store.getInfoByTaskId(taskId);
+                if (info != null) {
+                    info.setAttestEndDatetime(LocalDateTime.now());
+                    info.setAttested(true);
+                }
             }
         }
 
