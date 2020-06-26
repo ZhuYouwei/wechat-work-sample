@@ -1,9 +1,11 @@
 package com.example.wechatwork.gateway;
 
 import com.example.wechatwork.config.WechatWorkConfig;
+import com.example.wechatwork.domain.ExternalClientResult;
 import com.example.wechatwork.model.GetTokenResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,15 +17,19 @@ import reactor.core.publisher.Mono;
 import reactor.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+
 
 @Component
 @Slf4j
 public class WechatWorkGateway {
     @Autowired
     private WechatWorkConfig config;
+
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new Jdk8Module());
 
     public GetTokenResponse getAccessToken() {
         WebClient client = WebClient
@@ -137,21 +143,30 @@ public class WechatWorkGateway {
             String json = response.bodyToMono(String.class).block();
             log.info("JSON1 {}", json);
 
+            ExternalClientResult result = objectMapper.readValue(json, ExternalClientResult.class);
+
+            List<String> username = new ArrayList<>();
+
+            result.getExternalUserList().forEach(externalContact->{
+               String name = this.fetchExternalUserDetail(accessToken,externalContact);
+               username.add(name);
+            });
+
             ObjectNode node = new ObjectMapper().readValue(json, ObjectNode.class);
 
-            log.info("Node1 {}", node);
+            log.info("Current external user list {}", username);
+//            
+//            String x = node.get("external_userid").toString();
+//            int cnt = StringUtils.countOccurrencesOf(x, ",") + 1;
+//
+//            if (x.length() < 5) {
+//                log.info("Client count {}", x);
+//                return BigDecimal.ZERO;
+//            }
+//
+//            log.info("Client count {}", cnt);
 
-            String x = node.get("external_userid").toString();
-            int cnt = StringUtils.countOccurrencesOf(x, ",") + 1;
-
-            if (x.length() < 5) {
-                log.info("Client count {}", x);
-                return BigDecimal.ZERO;
-            }
-
-            log.info("Client count {}", cnt);
-
-            return BigDecimal.valueOf(cnt);
+            return BigDecimal.valueOf(result.getExternalUserList().size());
 
 //            int clientCount = ((String[]) node.get("external_userid")).size();
 
