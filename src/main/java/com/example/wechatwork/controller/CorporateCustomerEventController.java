@@ -95,7 +95,10 @@ public class CorporateCustomerEventController {
                 log.info("Disclaimer message call back response {}", r2);
             }
 
-            if ("del_external_contact".equalsIgnoreCase((String) msgContent.get("ChangeType"))) {
+            // 1st case is Employee deletes client
+            // 2nd case is Client deletes Employee
+            if ("del_external_contact".equalsIgnoreCase((String) msgContent.get("ChangeType")) ||
+                "del_follow_user".equalsIgnoreCase((String) msgContent.get("ChangeType"))) {
                 String userId = (String) msgContent.get("UserID");
                 GetTokenResponse res = gw.getAccessToken();
 
@@ -117,7 +120,7 @@ public class CorporateCustomerEventController {
 
             if ("affirm".equalsIgnoreCase(eventKey)) {
 //                store.removeTaskId(taskId);
-                LOGGER.info("Log affirmed for {}", taskId);
+                log.info("Log affirmed for {}", taskId);
                 AttestUserInfo info = store.getInfoByTaskId(taskId);
                 if (info != null) {
                     info.setAttestEndDatetime(LocalDateTime.now());

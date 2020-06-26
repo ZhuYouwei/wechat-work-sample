@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -95,7 +96,7 @@ public class WechatWorkGateway {
         val body = new HashMap<String, Object>();
         body.put("touser", targetUser);
         body.put("msgtype", "text");
-        body.put("agentid", "1000009");
+        body.put("agentid", "1000011");
         val content = new HashMap<String, String>();
         content.put("content", messageContent);
         body.put("text", content);
@@ -134,14 +135,28 @@ public class WechatWorkGateway {
                     .retrieve();
 
             String json = response.bodyToMono(String.class).block();
+            log.info("JSON1 {}", json);
 
             ObjectNode node = new ObjectMapper().readValue(json, ObjectNode.class);
 
-            int clientCount = ((List) node.get("external_userid")).size();
+            log.info("Node1 {}", node);
 
-            log.info("Client count {}", clientCount);
+            String x = node.get("external_userid").toString();
+            int cnt = StringUtils.countOccurrencesOf(x, ",") + 1;
 
-            return BigDecimal.valueOf(clientCount);
+            if (x.length() < 5) {
+                log.info("Client count {}", x);
+                return BigDecimal.ZERO;
+            }
+
+            log.info("Client count {}", cnt);
+
+            return BigDecimal.valueOf(cnt);
+
+//            int clientCount = ((String[]) node.get("external_userid")).size();
+
+//
+//            return BigDecimal.valueOf(clientCount);
         } catch (Exception e) {
             log.error("unable to parse external client information");
             return BigDecimal.ZERO;
