@@ -95,7 +95,7 @@ public class WechatWorkGateway {
         val body = new HashMap<String, Object>();
         body.put("touser", targetUser);
         body.put("msgtype", "text");
-        body.put("agentid", "appAgentid");
+        body.put("agentid", "1000009");
         val content = new HashMap<String, String>();
         content.put("content", messageContent);
         body.put("text", content);
