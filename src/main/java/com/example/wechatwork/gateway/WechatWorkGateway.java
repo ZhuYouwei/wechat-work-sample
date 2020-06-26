@@ -2,11 +2,8 @@ package com.example.wechatwork.gateway;
 
 import com.example.wechatwork.config.WechatWorkConfig;
 import com.example.wechatwork.model.GetTokenResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import me.chanjar.weixin.common.api.WxConsts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -14,9 +11,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -93,10 +87,12 @@ public class WechatWorkGateway {
                 .body(Mono.just(body), HashMap.class)
                 .retrieve();
 
+        log.info("Message has been sent to external users {}",externalUserIds);
+
         return response.bodyToMono(String.class).block();
     }
 
-    public String sendWelcome(String accessToken, String welcomeCode, String text)  {
+    public String sendWelcome(String accessToken, String welcomeCode, String text) {
         WebClient client = WebClient
                 .builder()
                 .baseUrl("https://qyapi.weixin.qq.com/")
@@ -120,6 +116,7 @@ public class WechatWorkGateway {
                 .body(Mono.just(body), HashMap.class)
                 .retrieve();
 
+        log.info("Welcome message has been sent to the new users");
 
         return response.bodyToMono(String.class).block();
     }
