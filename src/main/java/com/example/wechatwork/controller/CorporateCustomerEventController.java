@@ -55,9 +55,6 @@ public class CorporateCustomerEventController {
                 wechatWorkConfig.getExternalContactAesKey(),
                 wechatWorkConfig.getCorpid());
 
-        // Uncomment this line to write some payload for testing  later on
-        // writeStringToFile(eventString);
-
         val msgEnvelope = XmlUtils.xml2Map(eventString);
 
         String encryptedXml = String.valueOf(msgEnvelope.get("Encrypt"));
@@ -68,23 +65,19 @@ public class CorporateCustomerEventController {
         System.out.println("********** New Message received **************");
         msgContent.forEach((k, v) -> System.out.println(k + " : " + v));
 
-        if ("enter_agent".equals(msgContent.get("Event"))) {
-            GetTokenResponse res = gw.getAccessToken();
-            LOGGER.debug("Access Token: " + res.getAccess_token());
-            String results = gw.send(res.getAccess_token(), (String) msgContent.get("FromUserName"), (String) msgContent.get("AgentID"), (String) msgContent.get("welcome!!!"));
-            System.out.println(results);
+        if ("change_external_contact".equals(msgContent.get("Event"))) {
+            if ("add_external_contact".equals(msgContent.get("ChangeType"))){
+                GetTokenResponse res = gw.getAccessToken();
+                // Welcome message
+                String r1 = gw.sendWelcome(res.getAccess_token(), (String) msgContent.get("WelcomeCode"), "Welcome to JPMorgan!");
+                String externalUserId = (String) msgContent.get("ExternalUserID");
 
-            // TODO Fix this error
-            // {"errcode":40008,"errmsg":"invalid message type, hint: [1592319353_77_4e699f9e415228292dde839554c6191c], from ip: 220.246.156.20, more info at https://open.work.weixin.qq.com/devtool/query?e=40008"}
+                // Disclaimer message
+                String r2 = gw.sendMessageTask(res.getAccess_token(), externalUserId, "Some disclaimer text.");
+            }
         }
+
         return new ResponseEntity<>("reply", HttpStatus.OK);
     }
 
-    private void writeStringToFile(String eventString) {
-        try (var fr = new FileWriter("eventString" + System.currentTimeMillis(), StandardCharsets.UTF_8)) {
-            fr.write(eventString);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 }
