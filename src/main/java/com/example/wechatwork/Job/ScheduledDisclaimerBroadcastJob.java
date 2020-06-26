@@ -6,7 +6,6 @@ import com.example.wechatwork.config.WechatWorkConfig;
 import com.example.wechatwork.model.AttestUserInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Array;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,7 +86,7 @@ public class ScheduledDisclaimerBroadcastJob {
 
             log.info(res.toString());
 
-            AttestUserInfo info = new AttestUserInfo(uid,  LocalDateTime.now());
+            AttestUserInfo info = new AttestUserInfo(uid, LocalDateTime.now());
             String taskId = res.get("task_id");
             store.addTaskId(taskId, info);
         }

@@ -18,11 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Controller
 @Slf4j
@@ -98,7 +95,7 @@ public class CorporateCustomerEventController {
             // 1st case is Employee deletes client
             // 2nd case is Client deletes Employee
             if ("del_external_contact".equalsIgnoreCase((String) msgContent.get("ChangeType")) ||
-                "del_follow_user".equalsIgnoreCase((String) msgContent.get("ChangeType"))) {
+                    "del_follow_user".equalsIgnoreCase((String) msgContent.get("ChangeType"))) {
                 String userId = (String) msgContent.get("UserID");
                 GetTokenResponse res = gw.getAccessToken();
 
@@ -106,9 +103,11 @@ public class CorporateCustomerEventController {
 
                 GetTokenResponse appToken = gw.getAccessTokenForUserApp();
 
+                String externalUserName = gw.fetchExternalUserDetail(res.getAccess_token(),(String) msgContent.get("ExternalUserID"));
 
-                String userMsg = "You have been deleted by an external user, current external user count: " + externalClientCount.toString();
+                log.info("external user contact name {}", externalUserName);
 
+                String userMsg = "You are no longer WeChat contact with "+ externalUserName +", current external user count: " + externalClientCount.toString();
 
                 String response = gw.sendAppMessage(appToken.getAccess_token(), userMsg, userId);
 
