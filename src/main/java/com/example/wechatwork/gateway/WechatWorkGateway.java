@@ -2,11 +2,10 @@ package com.example.wechatwork.gateway;
 
 import com.example.wechatwork.config.WechatWorkConfig;
 import com.example.wechatwork.model.GetTokenResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import me.chanjar.weixin.common.api.WxConsts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -14,11 +13,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -34,12 +32,31 @@ public class WechatWorkGateway {
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
 
-        WebClient.ResponseSpec response;
+
         return client.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/cgi-bin/gettoken")
                         .queryParam("corpid", config.getCorpid())
                         .queryParam("corpsecret", config.getCorpsecret())
+                        .build())
+                .retrieve()
+                .bodyToMono(GetTokenResponse.class)
+                .block();
+    }
+
+    public GetTokenResponse getAccessTokenForUserApp() {
+        WebClient client = WebClient
+                .builder()
+                .baseUrl("https://qyapi.weixin.qq.com/")
+                .defaultCookie("cookieKey", "cookieValue")
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+
+        return client.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/cgi-bin/gettoken")
+                        .queryParam("corpid", config.getCorpid())
+                        .queryParam("corpsecret", config.getAppsecret())
                         .build())
                 .retrieve()
                 .bodyToMono(GetTokenResponse.class)
@@ -65,6 +82,106 @@ public class WechatWorkGateway {
         return response.bodyToMono(String.class).block();
     }
 
+
+    public String sendAppMessage(String accessToken, String messageContent, String targetUser) {
+
+        WebClient client = WebClient
+                .builder()
+                .baseUrl("https://qyapi.weixin.qq.com/")
+                .defaultCookie("cookieKey", "cookieValue")
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+
+        val body = new HashMap<String, Object>();
+        body.put("touser", targetUser);
+        body.put("msgtype", "text");
+        body.put("agentid", "appAgentid");
+        val content = new HashMap<String, String>();
+        content.put("content", messageContent);
+        body.put("text", content);
+
+        WebClient.ResponseSpec response;
+        response = client.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/cgi-bin/message/send")
+                        .queryParam("access_token", accessToken)
+                        .build())
+                .body(Mono.just(body), HashMap.class)
+                .retrieve();
+
+
+        log.info("Message has been sent to internal users {}", targetUser);
+
+        return response.bodyToMono(String.class).block();
+    }
+
+    public BigDecimal fetchExternalContactCount(String accessToken, String userId) {
+        try {
+            WebClient client = WebClient
+                    .builder()
+                    .baseUrl("https://qyapi.weixin.qq.com/")
+                    .defaultCookie("cookieKey", "cookieValue")
+                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .build();
+
+            WebClient.ResponseSpec response;
+            response = client.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/cgi-bin/externalcontact/list")
+                            .queryParam("access_token", accessToken)
+                            .queryParam("userid", userId)
+                            .build())
+                    .retrieve();
+
+            String json = response.bodyToMono(String.class).block();
+
+            ObjectNode node = new ObjectMapper().readValue(json, ObjectNode.class);
+
+            int clientCount = ((List) node.get("external_userid")).size();
+
+            log.info("Client count {}", clientCount);
+
+            return BigDecimal.valueOf(clientCount);
+        } catch (Exception e) {
+            log.error("unable to parse external client information");
+            return BigDecimal.ZERO;
+        }
+    }
+
+    public String fetchExternalUserDetail(String accessToken, String externalUserId) {
+        try {
+            WebClient client = WebClient
+                    .builder()
+                    .baseUrl("https://qyapi.weixin.qq.com/")
+                    .defaultCookie("cookieKey", "cookieValue")
+                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .build();
+
+
+            WebClient.ResponseSpec response;
+            response = client.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/cgi-bin/externalcontact/get")
+                            .queryParam("access_token", accessToken)
+                            .queryParam("external_userid", externalUserId)
+                            .build())
+                    .retrieve();
+
+            String json = response.bodyToMono(String.class).block();
+
+
+            ObjectNode node = new ObjectMapper().readValue(json, ObjectNode.class);
+
+            String clientName = node.get("external_contact").get("name").toString();
+
+            return clientName;
+
+        } catch (Exception e) {
+            log.error("unable to parse external client information");
+            return "valuable client";
+        }
+
+    }
 
     public String sendMessageTask(String accessToken, String externalUserId, String text) {
         WebClient client = WebClient
@@ -93,10 +210,12 @@ public class WechatWorkGateway {
                 .body(Mono.just(body), HashMap.class)
                 .retrieve();
 
+        log.info("Message has been sent to external users {}", externalUserIds);
+
         return response.bodyToMono(String.class).block();
     }
 
-    public String sendWelcome(String accessToken, String welcomeCode, String text)  {
+    public String sendWelcome(String accessToken, String welcomeCode, String text) {
         WebClient client = WebClient
                 .builder()
                 .baseUrl("https://qyapi.weixin.qq.com/")
@@ -120,6 +239,7 @@ public class WechatWorkGateway {
                 .body(Mono.just(body), HashMap.class)
                 .retrieve();
 
+        log.info("Welcome message has been sent to the new users");
 
         return response.bodyToMono(String.class).block();
     }
