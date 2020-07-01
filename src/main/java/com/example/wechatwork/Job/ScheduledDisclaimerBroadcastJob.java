@@ -3,7 +3,10 @@ package com.example.wechatwork.Job;
 
 import com.example.wechatwork.MemoryStorage;
 import com.example.wechatwork.config.WechatWorkConfig;
+import com.example.wechatwork.gateway.WechatWorkGateway;
 import com.example.wechatwork.model.AttestUserInfo;
+import com.example.wechatwork.model.ExternalUserList;
+import com.example.wechatwork.model.GetTokenResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -30,6 +34,9 @@ public class ScheduledDisclaimerBroadcastJob {
 
     @Autowired
     private MemoryStorage store;
+
+    @Autowired
+    private WechatWorkGateway gw;
 
     @Autowired
     private AppState appState;
@@ -57,7 +64,8 @@ public class ScheduledDisclaimerBroadcastJob {
 
     public void sendAttestations() {
         // Hard code the userids here
-        ArrayList<String> userIds = new ArrayList<>(Arrays.asList("R620829", "V708729", "W562241"));
+//        ArrayList<String> userIds = new ArrayList<>(Arrays.asList("R620829", "V708729", "W562241"));
+        ArrayList<String> userIds = new ArrayList<>(Arrays.asList("R620829"));
 
         for (String uid : userIds) {
             WebClient client = WebClient
@@ -97,7 +105,42 @@ public class ScheduledDisclaimerBroadcastJob {
             AttestUserInfo info = new AttestUserInfo(uid, LocalDateTime.now());
             String taskId = res.get("task_id");
             store.addTaskId(taskId, info);
+
+            // Send disclaimer to the user
+            // Step 1 - get all external customers he owns
+
+            GetTokenResponse res2 = gw.getAccessToken();
+            List<String> externalUserIDs = getExternalUserIds(uid, res2.getAccess_token());
+            for (String extUid : externalUserIDs) {
+                log.info("Sending message to external uid {}", extUid);
+                String r2 = gw.sendMessageTask(res2.getAccess_token(), extUid, "The message is confidential and subject to terms at: www.jpmorgan.com/emaildisclaimder. If you are not the intended recipient, please delete this message and notify the sender immediately. Any unauthorized use is strictly prohibited.");
+            }
+
         }
+    }
+
+    public List<String> getExternalUserIds(String userId, String accessToken) {
+        WebClient client = WebClient
+                .builder()
+                .baseUrl("https://qyapi.weixin.qq.com/")
+                .defaultCookie("cookieKey", "cookieValue")
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+
+//        WebClient.ResponseSpec response;
+        ExternalUserList response = client.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/cgi-bin/externalcontact/list")
+                        .queryParam("access_token", accessToken)
+                        .queryParam("userid", userId)
+                        .build())
+                .retrieve()
+                .bodyToMono(ExternalUserList.class)
+                .block();
+
+        log.info("Obtained external user list for User {}, list is {}", userId, response.getExternal_userid());
+        return response.getExternal_userid();
+
     }
 
 }

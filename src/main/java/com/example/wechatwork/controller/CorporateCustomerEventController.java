@@ -89,9 +89,9 @@ public class CorporateCustomerEventController {
                 log.info("Welcome message call back response {}", r1);
 
                 // Disclaimer message
-                String r2 = gw.sendMessageTask(res.getAccess_token(), externalUserID, "Some disclaimer text.");
+//                String r2 = gw.sendMessageTask(res.getAccess_token(), externalUserID, "The message is confidential and subject to terms at: www.jpmorgan.com/emaildisclaimder. If you are not the intended recipient, please delete this message and notify the sender immediately. Any unauthorized use is strictly prohibited.");
 
-                log.info("Disclaimer message call back response {}", r2);
+//                log.info("Disclaimer message call back response {}", r2);
             }
 
             // 1st case is Employee deletes client
