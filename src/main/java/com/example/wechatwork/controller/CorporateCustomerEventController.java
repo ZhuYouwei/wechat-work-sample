@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 @Slf4j
@@ -87,9 +89,9 @@ public class CorporateCustomerEventController {
                 log.info("Welcome message call back response {}", r1);
 
                 // Disclaimer message
-                String r2 = gw.sendMessageTask(res.getAccess_token(), externalUserID, "Some disclaimer text.");
+//                String r2 = gw.sendMessageTask(res.getAccess_token(), externalUserID, "The message is confidential and subject to terms at: www.jpmorgan.com/emaildisclaimder. If you are not the intended recipient, please delete this message and notify the sender immediately. Any unauthorized use is strictly prohibited.");
 
-                log.info("Disclaimer message call back response {}", r2);
+//                log.info("Disclaimer message call back response {}", r2);
             }
 
             // 1st case is Employee deletes client
@@ -99,15 +101,16 @@ public class CorporateCustomerEventController {
                 String userId = (String) msgContent.get("UserID");
                 GetTokenResponse res = gw.getAccessToken();
 
-                BigDecimal externalClientCount = this.gw.fetchExternalContactCount(res.getAccess_token(), userId);
+//                BigDecimal externalClientCount = this.gw.fetchExternalContactCount(res.getAccess_token(), userId);
+                List<String> externalContact = this.gw.fetchExternalContactCount(res.getAccess_token(), userId);
 
                 GetTokenResponse appToken = gw.getAccessTokenForUserApp();
+//
+//                String externalUserName = gw.fetchExternalUserDetail(res.getAccess_token(),(String) msgContent.get("ExternalUserID"));
+//
+//                log.info("external user contact name {}", externalUserName);
 
-                String externalUserName = gw.fetchExternalUserDetail(res.getAccess_token(),(String) msgContent.get("ExternalUserID"));
-
-                log.info("external user contact name {}", externalUserName);
-
-                String userMsg = "You are no longer WeChat contact with "+ externalUserName +", current external user count: " + externalClientCount.toString();
+                String userMsg = "You are no longer WeChat contact with an external client, current external users: " + externalContact.toString();
 
                 String response = gw.sendAppMessage(appToken.getAccess_token(), userMsg, userId);
 

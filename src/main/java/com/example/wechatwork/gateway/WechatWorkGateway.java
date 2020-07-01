@@ -122,7 +122,7 @@ public class WechatWorkGateway {
         return response.bodyToMono(String.class).block();
     }
 
-    public BigDecimal fetchExternalContactCount(String accessToken, String userId) {
+    public List<String> fetchExternalContactCount(String accessToken, String userId) {
         try {
             WebClient client = WebClient
                     .builder()
@@ -152,21 +152,23 @@ public class WechatWorkGateway {
                username.add(name);
             });
 
-            ObjectNode node = new ObjectMapper().readValue(json, ObjectNode.class);
-
-            log.info("Current external user list {}", username);
-//            
-//            String x = node.get("external_userid").toString();
-//            int cnt = StringUtils.countOccurrencesOf(x, ",") + 1;
+            return username;
 //
-//            if (x.length() < 5) {
-//                log.info("Client count {}", x);
-//                return BigDecimal.ZERO;
-//            }
+//            ObjectNode node = new ObjectMapper().readValue(json, ObjectNode.class);
 //
-//            log.info("Client count {}", cnt);
-
-            return BigDecimal.valueOf(result.getExternalUserList().size());
+//            log.info("Current external user list {}", username);
+////
+////            String x = node.get("external_userid").toString();
+////            int cnt = StringUtils.countOccurrencesOf(x, ",") + 1;
+////
+////            if (x.length() < 5) {
+////                log.info("Client count {}", x);
+////                return BigDecimal.ZERO;
+////            }
+////
+////            log.info("Client count {}", cnt);
+//
+//            return BigDecimal.valueOf(username.size());
 
 //            int clientCount = ((String[]) node.get("external_userid")).size();
 
@@ -174,7 +176,7 @@ public class WechatWorkGateway {
 //            return BigDecimal.valueOf(clientCount);
         } catch (Exception e) {
             log.error("unable to parse external client information");
-            return BigDecimal.ZERO;
+            return new ArrayList<>();
         }
     }
 
